@@ -13,6 +13,7 @@ import {
   getToday, saveToday, getHistory, addHistory, removeHistory,
   getSettings, saveSettings
 } from './storage.js';
+import { randomYi, randomJi } from './yi-ji-pool.js';
 
 // ---------- DOM 引用 ----------
 const $ = sel => document.querySelector(sel);
@@ -153,8 +154,8 @@ function renderToday() {
           ${c.keywords.map(k => `<span class="kw">${k}</span>`).join('')}
         </div>
         <div class="yi-ji">
-          <div class="yi">✨ 宜：${c.yi}</div>
-          <div class="ji">⚠️ 忌：${c.ji}</div>
+          <div class="yi">✨ 宜：${randomYi()}</div>
+          <div class="ji">⚠️ 忌：${randomJi()}</div>
         </div>
         <p class="today-why">${why}</p>
         <button class="btn btn--ghost" id="refresh-today">🔄 换一张试试（仅供娱乐）</button>
@@ -462,8 +463,8 @@ function readingHTML(card, r) {
         ${card.keywords.map(k => `<span class="kw">${k}</span>`).join('')}
       </div>
       <div class="yi-ji">
-        <div class="yi">✨ 宜：${card.yi}</div>
-        <div class="ji">⚠️ 忌：${card.ji}</div>
+        <div class="yi">✨ 宜：${randomYi()}</div>
+        <div class="ji">⚠️ 忌：${randomJi()}</div>
       </div>
     </div>
   `;
@@ -718,8 +719,8 @@ function renderDrawer(card) {
     <section>
       <h3>宜 / 忌</h3>
       <div class="yi-ji">
-        <div class="yi">✨ 宜：${card.yi}</div>
-        <div class="ji">⚠️ 忌：${card.ji}</div>
+        <div class="yi">✨ 宜：${randomYi()}</div>
+        <div class="ji">⚠️ 忌：${randomJi()}</div>
       </div>
     </section>
   `;

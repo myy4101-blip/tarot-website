@@ -27,6 +27,9 @@ yarn-debug.log*
 # Trae 缓存
 .trae-html-share-packages/
 
+# 运行时数据（每实例独立，不应入库）
+data/
+
 # 临时文件
 *.tmp
 *.bak

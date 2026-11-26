@@ -7,11 +7,16 @@
 //   4) LLM API 代理（流式 + 本地降级 + 登录要求 + 限流）
 // ============================================================
 
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
+import 'dotenv/config';
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+import { ALL_CARDS } from './public/tarot-data.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -250,8 +255,7 @@ app.get('/api/today', authRequired, async (req, res) => {
       return res.json({ ...all[key], date: today, alreadyDrawn: true });
     }
 
-    const mod = await import('./public/tarot-data.js');
-    const card = mod.ALL_CARDS[Math.floor(Math.random() * mod.ALL_CARDS.length)];
+    const card = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
     const isReversed = Math.random() < 0.5;
 
     const slim = {
@@ -380,7 +384,8 @@ app.get('*', (_req, res) => {
 // ============================================================
 // 启动
 // ============================================================
-if (require.main === module) {
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+if (isMain) {
   app.listen(PORT, () => {
     console.log(`\n🌙 塔罗牌占卜站已启动：http://localhost:${PORT}`);
     console.log(`  数据目录: ${DATA_DIR}`);
@@ -389,4 +394,4 @@ if (require.main === module) {
     console.log(`  LLM: ${LLM_API_KEY ? '✅ 已配置' : '⚠️  未配置（本地模板解读）'}`);
   });
 }
-module.exports = app;
+export default app;

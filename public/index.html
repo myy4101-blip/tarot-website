@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d0b1e" />
+  <title>🌙 月相塔罗 · Tarot Divination</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ====== 星空背景层 ====== -->
+  <div class="stars-bg" aria-hidden="true">
+    <div class="stars stars-s1"></div>
+    <div class="stars stars-s2"></div>
+    <div class="stars stars-s3"></div>
+    <div class="shooting" id="shooting1"></div>
+    <div class="shooting" id="shooting2"></div>
+  </div>
+
+  <!-- ====== 顶部导航 ====== -->
+  <header class="top-bar">
+    <div class="brand">
+      <span class="brand-icon">🌙</span>
+      <span class="brand-name">月相塔罗</span>
+      <span class="brand-en">Tarot</span>
+    </div>
+    <div class="top-actions">
+      <label class="toggle-simple" title="仅抽取正位牌">
+        <input type="checkbox" id="uprightOnly" />
+        <span class="toggle-slider"></span>
+        <span class="toggle-text">仅正位</span>
+      </label>
+      <button id="btnReset" class="btn-reset" title="重新开始">↻</button>
+    </div>
+  </header>
+
+  <!-- ====== 主容器 ====== -->
+  <main id="app" class="app">
+
+    <!-- ============ 阶段 1：首页 - 问题输入 ============ -->
+    <section class="stage stage--intro" id="stageIntro">
+      <h1 class="tagline">
+        <span>静心凝神，</span>
+        <span>向月亮问一个答案。</span>
+      </h1>
+      <p class="tagline-sub">
+        三牌阵 · 过去 / 现在 / 未来
+      </p>
+
+      <div class="question-box">
+        <label for="questionInput">写下你心中的问题 <span class="optional">（可跳过）</span></label>
+        <textarea id="questionInput" rows="2" maxlength="200"
+          placeholder="例如：我最近的工作选择会带来怎样的结果？"></textarea>
+      </div>
+
+      <button id="btnStart" class="btn-primary">
+        <span>✨ 开始占卜</span>
+      </button>
+
+      <p class="tip">点击开始后，牌会先洗牌再翻开</p>
+    </section>
+
+    <!-- ============ 阶段 2：洗牌动画 ============ -->
+    <section class="stage stage--shuffling hidden" id="stageShuffling">
+      <h2 class="shuffling-title">✨ 正在洗牌...</h2>
+      <div class="deck-area" id="deckArea">
+        <!-- JS 动态生成 78 张卡牌 -->
+      </div>
+      <p class="shuffling-hint">感受你的问题，牌在聆听</p>
+    </section>
+
+    <!-- ============ 阶段 3：抽牌区 ============ -->
+    <section class="stage stage--cards hidden" id="stageCards">
+      <div class="cards-row">
+        <!-- 三张牌的占位，JS 动态填充 -->
+      </div>
+      <p class="reveal-hint" id="revealHint">点击卡牌逐一翻开</p>
+    </section>
+
+    <!-- ============ 阶段 4：综合解读 + 追问 ============ -->
+    <section class="stage stage--interpret hidden" id="stageInterpret">
+      <div class="interpret-block">
+        <h2 class="section-title">
+          <span class="section-line"></span>
+          综合解读
+          <span class="section-line"></span>
+        </h2>
+
+        <div class="interpret-body" id="interpretBody">
+          <div class="interpret-loading" id="interpretLoading">
+            <span></span><span></span><span></span>
+            <p id="interpretHint">正在连接星象...</p>
+          </div>
+        </div>
+
+        <p class="interpret-source" id="interpretSource"></p>
+      </div>
+
+      <!-- 追问区域 -->
+      <div class="followup-block">
+        <h2 class="section-title section-title--small">💬 继续追问</h2>
+        <div class="followup-history" id="followupHistory"></div>
+
+        <div class="followup-input-row">
+          <textarea id="followupInput" rows="2" maxlength="200"
+            placeholder="例如：这张牌和我的工作有什么关系？"></textarea>
+          <button id="btnFollowup" class="btn-primary btn-primary--small" disabled>发送</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====== 底部合规声明 ====== -->
+  <footer class="footer">
+    <p>内容仅供娱乐，不构成任何医疗、法律、投资建议。</p>
+    <p class="footer-sub">Made with 🌙 · 78 张韦特塔罗</p>
+  </footer>
+
+  <!-- 全局错误提示条 -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

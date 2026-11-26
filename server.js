@@ -17,6 +17,17 @@ const LLM_MODEL = process.env.LLM_MODEL || 'gpt-3.5-turbo';
 
 // ------- 中间件 -------
 app.use(express.json({ limit: '1mb' }));
+
+// 防缓存：每次都让浏览器重新拿 JS/CSS/HTML
+app.use((req, res, next) => {
+  if (req.url.match(/\.(js|css|html|svg)$/)) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ------- 健康检查 + 配置状态 -------

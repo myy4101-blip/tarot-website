@@ -30,6 +30,9 @@ async function apiFetch(url, opts = {}) {
 }
 
 export const Auth = {
+  getToken,
+  getUser,
+  isLoggedIn,
   async register(username, password) {
     const data = await apiFetch('/api/auth/register', {
       method: 'POST',

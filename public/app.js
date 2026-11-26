@@ -14,6 +14,7 @@ import {
   getSettings, saveSettings
 } from './storage.js';
 import { randomYis, randomJis } from './yi-ji-pool.js';
+import { Auth } from './auth.js';
 
 // ---------- DOM 引用 ----------
 const $ = sel => document.querySelector(sel);
@@ -119,58 +120,66 @@ function toast(msg) {
 // 页面一：今日运势
 // ============================================================
 
-function renderToday() {
-  const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10);
+async function renderToday() {
+  const dateStr = new Date().toISOString().slice(0, 10);
   $('#today-date').textContent = `今天是 ${dateStr}`;
 
-  let cached = getToday();
-  if (!cached) {
-    // 用日期做种子抽一张
-    const seedSum = [...dateStr].reduce((a,c) => a + c.charCodeAt(0), 0);
-    const idx = seedSum % ALL_CARDS.length;
-    const uprightOnly = getSettings().uprightOnly;
-    const card = { ...ALL_CARDS[idx], isReversed: uprightOnly ? false : seedSum % 2 === 1 };
-    saveToday(card, dateStr);
-    cached = { card, date: dateStr };
+  if (!Auth.isLoggedIn()) {
+    $('#today-body').innerHTML = `
+      <div class="reading-block" style="text-align:center;">
+        <p class="card-title">🌙 今日牌</p>
+        <p style="color:var(--ink-dim); font-size:14px; margin:16px 0;">
+          登录后每天可以抽一张专属今日牌<br/>
+          抽了当天就固定，明天自动刷新
+        </p>
+        <button class="btn btn--primary" id="today-login-btn">登录 / 注册</button>
+      </div>
+    `;
+    $('#today-login-btn')?.addEventListener('click', openAuth);
+    return;
   }
 
-  const c = cached.card;
-  const why = whyToday(c, dateStr);
+  $('#today-body').innerHTML = `<p style="text-align:center;color:var(--ink-dim);padding:40px;">✨ 宇宙正在为你准备今日牌…</p>`;
+
+  let card;
+  try {
+    const data = await Auth.getToday();
+    card = { ...data, type: data.type === 'major' ? 'major' : 'minor' };
+  } catch (e) {
+    $('#today-body').innerHTML = `<p style="color:var(--danger);text-align:center;">加载失败：${e.message}</p>`;
+    return;
+  }
+
+  const why = whyToday(card, dateStr);
   const yis = randomYis(3);
   const jis = randomJis(3);
 
   $('#today-body').innerHTML = `
     <div class="today-card-display">
-      ${cardHTML(c, { clickable: false })}
+      ${cardHTML(card, { clickable: false })}
     </div>
     <div class="today-info">
       <div class="reading-block" style="text-align:center;">
         <p class="card-title">
-          ${c.nameCn}
-          <span class="ori-badge ${c.isReversed ? 'ori-rev' : 'ori-up'}">
-            ${c.isReversed ? '逆位' : '正位'}
+          ${card.nameCn}
+          <span class="ori-badge ${card.isReversed ? 'ori-rev' : 'ori-up'}">
+            ${card.isReversed ? '逆位' : '正位'}
           </span>
         </p>
         <div class="keywords" style="justify-content:center;">
-          ${c.keywords.map(k => `<span class="kw">${k}</span>`).join('')}
+          ${card.keywords.map(k => `<span class="kw">${k}</span>`).join('')}
         </div>
         <div class="yi-ji">
           <div class="yi">✨ 宜：${yis.join(' · ')}</div>
           <div class="ji">⚠️ 忌：${jis.join(' · ')}</div>
         </div>
         <p class="today-why">${why}</p>
-        <button class="btn btn--ghost" id="refresh-today">🔄 换一张试试（仅供娱乐）</button>
+        <p style="font-size:12px;color:var(--ink-dim);margin-top:8px;">
+          ${card.alreadyDrawn ? '✅ 你今天已经抽过这张啦' : '✨ 今日新鲜出炉'}
+        </p>
       </div>
     </div>
   `;
-
-  $('#refresh-today')?.addEventListener('click', () => {
-    // 手动清缓存重新抽
-    localStorage.removeItem(`${NS}:todayCard`);
-    renderToday();
-    toast('宇宙给你换了一张～');
-  });
 }
 
 // ============================================================
@@ -739,8 +748,103 @@ function closeDrawer() {
 }
 
 // ============================================================
+// Auth UI：登录 / 注册 / 登出
+// ============================================================
+
+let authMode = 'login'; // 'login' | 'register'
+
+function updateUserChip() {
+  const el = $('#user-chip');
+  if (Auth.isLoggedIn()) {
+    el.querySelector('#user-chip-text').textContent = `👤 ${Auth.getUser()}`;
+  } else {
+    el.querySelector('#user-chip-text').textContent = `👤 登录`;
+  }
+}
+
+function openAuth() {
+  if (Auth.isLoggedIn()) {
+    // 已登录 → 显示用户菜单
+    $('#auth-body').innerHTML = `
+      <div class="user-menu">
+        <h2>${Auth.getUser()}</h2>
+        <p class="sub">已登录，可以保存占卜记录和查看今日牌</p>
+        <button class="btn btn--ghost" id="close-auth">关闭</button>
+        <button class="btn btn--ghost btn-logout" id="do-logout">退出登录</button>
+      </div>
+    `;
+    $('#close-auth').addEventListener('click', closeAuth);
+    $('#do-logout').addEventListener('click', async () => {
+      await Auth.logout();
+      updateUserChip();
+      closeAuth();
+      // 如果正在看今日，刷新一下（未登录引导）
+      if (state.view === 'today') renderToday();
+      toast('已退出登录');
+    });
+  } else {
+    renderAuthForm();
+  }
+  $('#auth-drawer').hidden = false;
+}
+
+function closeAuth() {
+  $('#auth-drawer').hidden = true;
+}
+
+function renderAuthForm(err = '') {
+  const modeLabel = authMode === 'login' ? '登录' : '注册';
+  $('#auth-body').innerHTML = `
+    <form class="auth-form" id="auth-form">
+      <h2>🌙 ${modeLabel}</h2>
+      ${err ? `<div class="err">${err}</div>` : '<div class="err"></div>'}
+      <input type="text" id="auth-username" placeholder="名字（2-20字）" autocomplete="username" required />
+      <input type="password" id="auth-password" placeholder="密码（至少 4 位）" autocomplete="current-password" required />
+      <button type="submit">${modeLabel}</button>
+      <div class="switch">
+        ${authMode === 'login'
+          ? `还没有账号？<button type="button" id="switch-auth">注册一个</button>`
+          : `已有账号？<button type="button" id="switch-auth">去登录</button>`}
+      </div>
+    </form>
+  `;
+  $('#auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = $('#auth-username').value.trim();
+    const password = $('#auth-password').value;
+    const errEl = $('#auth-body .err');
+    try {
+      const fn = authMode === 'login' ? Auth.login.bind(Auth) : Auth.register.bind(Auth);
+      const name = await fn(username, password);
+      updateUserChip();
+      closeAuth();
+      toast(authMode === 'login' ? `欢迎回来，${name}` : `注册成功，欢迎${name}`);
+      // 如果正在看今日，刷新
+      if (state.view === 'today') renderToday();
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+  $('#switch-auth')?.addEventListener('click', () => {
+    authMode = authMode === 'login' ? 'register' : 'login';
+    renderAuthForm();
+  });
+}
+
+// 用户 chip 点击
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest('#user-chip');
+  if (chip) { openAuth(); return; }
+  const closer = e.target.closest('[data-drawer-close="auth"]');
+  if (closer && e.target.closest('#auth-drawer')) { closeAuth(); return; }
+});
+
+// ============================================================
 // 启动
 // ============================================================
+
+// 先更新用户 chip 状态
+updateUserChip();
 
 // 从 hash 恢复
 const initHash = (location.hash || '#divine').replace('#', '');

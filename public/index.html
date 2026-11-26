@@ -115,6 +115,20 @@
   <!-- Toast -->
   <div class="toast" id="toast" hidden></div>
 
+  <!-- 登录 / 注册 弹窗 -->
+  <div class="drawer auth-drawer" id="auth-drawer" hidden>
+    <div class="drawer-mask" data-drawer-close="auth"></div>
+    <div class="drawer-panel" style="max-height: 100%; height: auto;">
+      <button class="drawer-close" data-drawer-close="auth">✕</button>
+      <div id="auth-body"></div>
+    </div>
+  </div>
+
+  <!-- 右上角用户入口 -->
+  <button class="user-chip" id="user-chip">
+    <span id="user-chip-text">👤 登录</span>
+  </button>
+
   <!-- 底部标签栏 -->
   <nav class="tabbar" aria-label="主导航">
     <button class="tab" data-go="today"><span class="tab-ico">🌙</span><span class="tab-label">今日</span></button>

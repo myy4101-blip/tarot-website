@@ -18,5 +18,45 @@
       "稳定"
     ],
     "isReversed": true
+  },
+  "??2??999-2026-12-01": {
+    "id": "s7",
+    "nameCn": "宝剑七",
+    "nameEn": "Swords of Sevens",
+    "type": "minor",
+    "suit": "swords",
+    "suitCn": "宝剑",
+    "rank": "7",
+    "element": "风",
+    "upright": "【想法、沟通、冲突、真理】需要仔细评估，别被表象迷惑。",
+    "reversed": "【想法、沟通、冲突、真理】拖延太久或做了错误判断。",
+    "keywords": [
+      "宝剑",
+      "评估",
+      "思考",
+      "沟通",
+      "真相"
+    ],
+    "isReversed": false
+  },
+  "??2??999-2026-12-02": {
+    "id": "p5",
+    "nameCn": "星币五",
+    "nameEn": "Pentacles of Fives",
+    "type": "minor",
+    "suit": "pentacles",
+    "suitCn": "星币",
+    "rank": "5",
+    "element": "土",
+    "upright": "【金钱、物质、现实、身体】经历一段困难时期，低谷也是转机的契机。",
+    "reversed": "【金钱、物质、现实、身体】冲突即将结束，但阴影还在。",
+    "keywords": [
+      "星币",
+      "动摇",
+      "物质",
+      "金钱",
+      "稳定"
+    ],
+    "isReversed": true
   }
 }

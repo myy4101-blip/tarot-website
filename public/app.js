@@ -120,8 +120,17 @@ function toast(msg) {
 // 页面一：今日运势
 // ============================================================
 
+// 用用户本地时区算日期（避免服务器时区不一致）
+function localDateStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 async function renderToday() {
-  const dateStr = new Date().toISOString().slice(0, 10);
+  const dateStr = localDateStr();
   $('#today-date').textContent = `今天是 ${dateStr}`;
 
   if (!Auth.isLoggedIn()) {
@@ -143,7 +152,7 @@ async function renderToday() {
 
   let card;
   try {
-    const data = await Auth.getToday();
+    const data = await Auth.getToday(dateStr);
     card = { ...data, type: data.type === 'major' ? 'major' : 'minor' };
   } catch (e) {
     $('#today-body').innerHTML = `<p style="color:var(--danger);text-align:center;">加载失败：${e.message}</p>`;

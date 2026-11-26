@@ -56,7 +56,8 @@ export const Auth = {
   async me() {
     try { return await apiFetch('/api/auth/me'); } catch { clearAuth(); return null; }
   },
-  async getToday() {
-    return apiFetch('/api/today');
+  async getToday(dateStr) {
+    const url = dateStr ? `/api/today?date=${dateStr}` : `/api/today`;
+    return apiFetch(url);
   }
 };

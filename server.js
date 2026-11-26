@@ -158,9 +158,13 @@ app.get('/api/auth/me', authRequired, (req, res) => {
 // 今日牌：按用户 + 日期 固定
 // ============================================================
 
-// GET /api/today  ?token=xxx  →  返回该用户今日的牌（有就返回，没有就随机生成并存）
+// GET /api/today  ?token=xxx&date=YYYY-MM-DD  →  返回该用户今日的牌
+// date 参数由前端按用户本地时区传入，避免服务器时区差
 app.get('/api/today', authRequired, async (req, res) => {
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  // 优先用前端传来的日期（用户本地时区），没传才用服务器 UTC
+  const today = req.query.date && /^\d{4}-\d{2}-\d{2}$/.test(req.query.date)
+    ? req.query.date
+    : new Date().toISOString().slice(0, 10);
   const key = `${req.username}-${today}`;
 
   const all = loadToday();

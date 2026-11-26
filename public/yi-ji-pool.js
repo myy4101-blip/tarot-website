@@ -1,6 +1,6 @@
 /* ============================================================
    yi-ji-pool.js —— 宜/忌通用池子
-   独立于牌义，需要时从池子里随机抽一条
+   独立于牌义，需要时从池子里随机抽
    ============================================================ */
 
 export const YI_POOL = [
@@ -77,11 +77,19 @@ export const JI_POOL = [
   '嘴上说没事'
 ];
 
-// 从池子里随机抽一条
-export function randomYi() {
-  return YI_POOL[Math.floor(Math.random() * YI_POOL.length)];
+// 从池子里随机抽 n 条不重复
+function sample(pool, n) {
+  const copy = [...pool];
+  const out = [];
+  for (let i = 0; i < n && copy.length > 0; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(idx, 1)[0]);
+  }
+  return out;
 }
 
-export function randomJi() {
-  return JI_POOL[Math.floor(Math.random() * JI_POOL.length)];
-}
+// 对外接口
+export function randomYi() { return YI_POOL[Math.floor(Math.random() * YI_POOL.length)]; }
+export function randomJi() { return JI_POOL[Math.floor(Math.random() * JI_POOL.length)]; }
+export function randomYis(n = 3) { return sample(YI_POOL, n); }
+export function randomJis(n = 3) { return sample(JI_POOL, n); }

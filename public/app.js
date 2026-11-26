@@ -13,7 +13,7 @@ import {
   getToday, saveToday, getHistory, addHistory, removeHistory,
   getSettings, saveSettings
 } from './storage.js';
-import { randomYi, randomJi } from './yi-ji-pool.js';
+import { randomYis, randomJis } from './yi-ji-pool.js';
 
 // ---------- DOM 引用 ----------
 const $ = sel => document.querySelector(sel);
@@ -137,6 +137,8 @@ function renderToday() {
 
   const c = cached.card;
   const why = whyToday(c, dateStr);
+  const yis = randomYis(3);
+  const jis = randomJis(3);
 
   $('#today-body').innerHTML = `
     <div class="today-card-display">
@@ -154,8 +156,8 @@ function renderToday() {
           ${c.keywords.map(k => `<span class="kw">${k}</span>`).join('')}
         </div>
         <div class="yi-ji">
-          <div class="yi">✨ 宜：${randomYi()}</div>
-          <div class="ji">⚠️ 忌：${randomJi()}</div>
+          <div class="yi">✨ 宜：${yis.join(' · ')}</div>
+          <div class="ji">⚠️ 忌：${jis.join(' · ')}</div>
         </div>
         <p class="today-why">${why}</p>
         <button class="btn btn--ghost" id="refresh-today">🔄 换一张试试（仅供娱乐）</button>
@@ -462,10 +464,6 @@ function readingHTML(card, r) {
       <div class="keywords">
         ${card.keywords.map(k => `<span class="kw">${k}</span>`).join('')}
       </div>
-      <div class="yi-ji">
-        <div class="yi">✨ 宜：${randomYi()}</div>
-        <div class="ji">⚠️ 忌：${randomJi()}</div>
-      </div>
     </div>
   `;
 }
@@ -681,6 +679,8 @@ function openDrawer(cardId) {
 function renderDrawer(card) {
   const meaning = drawerOri === 'up' ? card.upright : card.reversed;
   const flipClass = drawerOri === 'up' ? '' : ' reversed';
+  const yiList = randomYis(3).join(' · ');
+  const jiList = randomJis(3).join(' · ');
 
   $('#drawer-body').innerHTML = `
     <div class="card${flipClass} card-big" style="position:relative;width:160px;height:260px;">
@@ -719,8 +719,8 @@ function renderDrawer(card) {
     <section>
       <h3>宜 / 忌</h3>
       <div class="yi-ji">
-        <div class="yi">✨ 宜：${randomYi()}</div>
-        <div class="ji">⚠️ 忌：${randomJi()}</div>
+        <div class="yi">✨ 宜：${yiList}</div>
+        <div class="ji">⚠️ 忌：${jiList}</div>
       </div>
     </section>
   `;

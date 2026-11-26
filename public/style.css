@@ -349,7 +349,7 @@ textarea#question-input:focus { border-color: var(--gold-hi); }
 .card.flipped {
   transform: rotateY(180deg);
 }
-.card.is-flipping {
+.card.flipping {
   pointer-events: none;
 }
 .card-face {

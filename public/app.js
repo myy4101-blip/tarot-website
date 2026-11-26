@@ -10,7 +10,7 @@ import {
   whyToday, buildResultText
 } from './interpretation.js';
 import {
-  getToday, saveToday, getHistory, addHistory, removeHistory,
+  getHistory, addHistory, removeHistory,
   getSettings, saveSettings
 } from './storage.js';
 import { randomYis, randomJis } from './yi-ji-pool.js';
@@ -23,8 +23,8 @@ const $$ = sel => document.querySelectorAll(sel);
 // ---------- 全局状态 ----------
 const state = {
   view: 'divine',          // 当前 view
-  themeKey: null,          // 主题
-  spreadKey: null,         // 阵型：'past-present-future' | 'single'
+  themeKey: 'self',        // 默认主题：自我
+  spreadKey: 'past-present-future', // 默认阵型：三张牌
   question: '',
   uprightOnly: false,
   cards: [],               // 本次抽到的牌
@@ -52,7 +52,7 @@ function cardSVG(card) {
 
 function cardHTML(card, { size = 'normal', clickable = true, hidden = false, reversed = false } = {}) {
   const rev = (card.isReversed || reversed) ? ' reversed' : '';
-  const sizeCls = size === 'mini' ? ' card--mini' : size === 'big' ? ' card card--big' : '';
+  const sizeCls = size === 'mini' ? ' card--mini' : size === 'big' ? ' card-big' : '';
   const clickCls = clickable ? '' : ' revealed';
   const clickArea = clickable ? `<div class="card-click-area"></div>` : '';
   return `

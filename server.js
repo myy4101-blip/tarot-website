@@ -159,7 +159,7 @@ app.get('/api/auth/me', authRequired, (req, res) => {
 // ============================================================
 
 // GET /api/today  ?token=xxx  →  返回该用户今日的牌（有就返回，没有就随机生成并存）
-app.get('/api/today', authRequired, (req, res) => {
+app.get('/api/today', authRequired, async (req, res) => {
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `${req.username}-${today}`;
 
@@ -169,10 +169,9 @@ app.get('/api/today', authRequired, (req, res) => {
     return res.json({ ...all[key], date: today, alreadyDrawn: true });
   }
 
-  // 没有：从 78 张里随机抽一张，按日期做一点种子扰动
-  // （不跟日期强绑定，每天都会变，保证新鲜感）
-  const cards = require('./public/tarot-data.js').ALL_CARDS;
-  const card = cards[Math.floor(Math.random() * cards.length)];
+  // 没有：从 78 张里随机抽一张
+  const mod = await import('./public/tarot-data.js');
+  const card = mod.ALL_CARDS[Math.floor(Math.random() * mod.ALL_CARDS.length)];
   const isReversed = Math.random() < 0.5;
 
   // 只存必要字段（不含函数/SVG 那种）

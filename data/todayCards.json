@@ -58,5 +58,25 @@
       "稳定"
     ],
     "isReversed": true
+  },
+  "safeUser999-2026-11-26": {
+    "id": "sKg",
+    "nameCn": "宝剑国王",
+    "nameEn": "King of Swordss",
+    "type": "minor",
+    "suit": "swords",
+    "suitCn": "宝剑",
+    "rank": "Kg",
+    "element": "风",
+    "upright": "你正处在想法、沟通、冲突、真理的掌控、权威、成熟引导阶段，或需要这样的能量。",
+    "reversed": "想法、沟通、冲突、真理方面的国王能量失衡——做决定或领导不足或过度。",
+    "keywords": [
+      "宝剑",
+      "掌控",
+      "思考",
+      "沟通",
+      "真相"
+    ],
+    "isReversed": true
   }
 }

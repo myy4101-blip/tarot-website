@@ -155,7 +155,7 @@ async function renderToday() {
     const data = await Auth.getToday(dateStr);
     card = { ...data, type: data.type === 'major' ? 'major' : 'minor' };
   } catch (e) {
-    $('#today-body').innerHTML = `<p style="color:var(--danger);text-align:center;">加载失败：${e.message}</p>`;
+    $('#today-body').textContent = '加载失败：' + e.message;
     return;
   }
 

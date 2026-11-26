@@ -24,6 +24,9 @@ yarn-debug.log*
 # Vercel 本地缓存
 .vercel/
 
+# Trae 缓存
+.trae-html-share-packages/
+
 # 临时文件
 *.tmp
 *.bak

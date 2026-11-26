@@ -645,6 +645,9 @@ textarea#question-input:focus { border-color: var(--gold-hi); }
   position: fixed; inset: 0; z-index: 100;
   display: flex; align-items: flex-end;
 }
+.drawer[hidden] {
+  display: none !important;
+}
 .drawer-mask {
   position: absolute; inset: 0;
   background: rgba(0,0,0,.6);

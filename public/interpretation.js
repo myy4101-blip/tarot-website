@@ -1,198 +1,238 @@
-// ============================================================
-// 本地模板解读引擎
-// 即使没有大模型，网站也能输出完整解读
-// ============================================================
+/* ============================================================
+   interpretation.js —— 本地解读引擎
+   4 套主题模板 × 3 种句式轮换 × 具体行动建议
+   ============================================================ */
 
-import { THREE_CARD_POSITIONS } from './tarot-data.js';
+// ---------- 主题配置 ----------
+export const THEMES = [
+  { key: 'love',   label: '感情', emoji: '💕',
+    questions: ['我和TA会怎样？','这段关系怎么发展？','我该怎么表达心意？'] },
+  { key: 'study',  label: '学业', emoji: '📖',
+    questions: ['我该怎么准备考试？','当前学习状态如何？','要不要换方向？'] },
+  { key: 'work',   label: '工作', emoji: '💼',
+    questions: ['要不要换工作？','项目能不能成？','和同事/上司的关系如何？'] },
+  { key: 'self',   label: '自我', emoji: '🌱',
+    questions: ['我现在最需要关注什么？','我的状态怎么样？','接下来要做什么调整？'] }
+];
 
-// ---------- 每个牌位的"视角滤镜" ----------
-// 同一张牌，在不同牌位下有不同的解读侧重
-const POSITION_LENS = {
+// 四种主题下，同一关键词的措辞滤镜
+const THEME_FILTERS = {
+  love: {
+    '起点': '一段关系或互动的萌芽',
+    '平衡': '感情中的天平需要校准',
+    '合作': '双方的配合与共识',
+    '稳定': '稳固的情感地基',
+    '动摇': '关系里出现了裂痕',
+    '给予': '关系中的付出与接纳',
+    '评估': '审视这段感情值不值得',
+    '推进': '关系在加速升温',
+    '临成': '感情即将进入新阶段',
+    '完成': '关系到达一个里程碑',
+    '行动': '大胆去表达或推进关系',
+    '情感': '感受和情绪',
+    '选择': '关于关系的重要决定',
+    '挑战': '感情里的考验',
+    '新开始': '感情翻开新的一页',
+    '等待': '在感情里需要耐心',
+    '直觉': '关于TA的直觉判断',
+  },
+  study: {
+    '起点': '学习新东西的开始',
+    '平衡': '学习与休息的节奏',
+    '合作': '组队、交流、互助',
+    '稳定': '扎实的基础和习惯',
+    '动摇': '心态或进度出了问题',
+    '给予': '分享知识、帮助同学',
+    '评估': '复盘、自测、查漏补缺',
+    '推进': '进度在加快',
+    '临成': '考试或项目临近交付',
+    '完成': '阶段性目标达成',
+    '行动': '执行力和专注力',
+    '思考': '思维方式和认知',
+    '沟通': '请教和讨论',
+    '真相': '找到自己的薄弱点',
+    '新开始': '学习路径的新方向',
+    '等待': '需要沉下心来积累',
+    '稳定': '有规律的学习节奏',
+  },
+  work: {
+    '起点': '新项目或新岗位的开始',
+    '平衡': '工作与生活的平衡',
+    '合作': '团队协作、跨部门配合',
+    '稳定': '稳固的职场地位',
+    '动摇': '职场中的变数或摇摆',
+    '给予': '在职场中贡献价值',
+    '评估': '复盘、做决策',
+    '推进': '项目在加速',
+    '临成': 'KPI 即将达成',
+    '完成': '一个项目/周期收尾',
+    '行动': '果断执行',
+    '思考': '策略和决策',
+    '沟通': '汇报、对齐、争取资源',
+    '真相': '看清职场中的真实情况',
+    '新开始': '职业转型或新机会',
+    '等待': '时机未到，先准备',
+    '稳定': '稳扎稳打不冒进',
+  },
+  self: {
+    '起点': '自我探索的新起点',
+    '平衡': '内在的和谐与均衡',
+    '合作': '和外界的健康互动',
+    '稳定': '内在的安稳和笃定',
+    '动摇': '内心的波动和迷茫',
+    '给予': '接纳自己的同时付出',
+    '评估': '自我审视和反思',
+    '推进': '在某个方向快速成长',
+    '临成': '内在的成长即将显现',
+    '完成': '一个成长周期结束',
+    '行动': '对自己负责的行动',
+    '直觉': '聆听内心的声音',
+    '情感': '允许情绪流动',
+    '真相': '看见真实的自己',
+    '新开始': '人生新阶段',
+    '等待': '给自己时间疗愈',
+    '稳定': '建立内在的定海神针',
+  }
+};
+
+// ---------- 牌位模板 ----------
+const POSITION_TEMPLATES = {
   past: {
-    intro: '在「过去」的位置，',
-    // 正位 → 过去给现在带来的积极遗产
-    upright: (card) => {
-      const base = card.upright.replace(/[。！？]$/, '');
-      return `${base}。这张牌出现在过去，说明你曾经种下的种子现在正在发芽——你之前做出的选择、积累的经验，构成了此刻的底色。`;
-    },
-    // 逆位 → 过去的功课或未完成的事
-    reversed: (card) => {
-      const base = card.reversed.replace(/[。！？]$/, '');
-      return `${base}。这可能是你过去未完成的一段功课，或是曾经有过的一个遗憾，它至今仍在悄悄影响着你。`;
-    }
+    cn: '过去',
+    up: '「{card}」出现在过去，是一个关于{focus}的能量。{keyword}的种子在那时已经种下，构成了你此刻的底色。',
+    rev: '「{card}」以逆位出现在过去，关于{focus}，有些事情没能顺畅完成，那份未竟之力至今仍在影响你。'
   },
   present: {
-    intro: '落在「现在」，',
-    upright: (card) => {
-      const base = card.upright.replace(/[。！？]$/, '');
-      return `${base}。这就是你此刻正在经历的——让它的能量充分流动，你会发现当下比你想象的更清晰。`;
-    },
-    reversed: (card) => {
-      const base = card.reversed.replace(/[。！？]$/, '');
-      return `${base}。现在这个位置的逆位不是坏消息，它是一面镜子，提醒你当下有什么地方需要调整方向。`;
-    }
+    cn: '现在',
+    up: '「{card}」正位在现在，{focus}的能量正在充分流动。这张牌在告诉你：{meaning}',
+    rev: '「{card}」逆位在现在，像一面镜子。{focus}方面需要调整方向，{meaning}'
   },
   future: {
-    intro: '指向「未来」，',
-    upright: (card) => {
-      const base = card.upright.replace(/[。！？]$/, '');
-      return `${base}。这是一个有希望的信号——你当下的行动正在把你引向这个方向，保持当前的节奏，它就会到来。`;
-    },
-    reversed: (card) => {
-      const base = card.reversed.replace(/[。！？]$/, '');
-      return `${base}。未来的逆位牌并不是"不好"的预告，它更像一张警告牌：如果继续走当前的路，可能会遇到这个结果。现在还有时间调整。`;
+    cn: '未来',
+    up: '「{card}」正位在未来，关于{focus}，这是一个有希望的信号。当下的行动正在把你推向这个方向。',
+    rev: '「{card}」逆位在未来——不是"不好的预兆"，而是一张警告牌。如果沿着当前的路走下去，可能遇到这个结果，是时候重新选择了。'
+  },
+  single: {
+    cn: '指引',
+    up: '「{card}」是这次抽牌的指引。关于{focus}，{meaning}',
+    rev: '「{card}」逆位是这次抽牌的提醒。关于{focus}，{meaning}'
+  }
+};
+
+// ---------- 三种句式轮换 ----------
+const SYNTAX_STYLES = ['causal', 'tension', 'advice'];
+const SYNTAX_TEMPLATES = {
+  causal: {
+    label: '因果式',
+    build: (readings, theme) => {
+      const [p, n, f] = readings;
+      return `${p.cardName}埋下的因，在${n.cardName}中显化，而${f.cardName}则告诉你当下的选择会结出什么果。这不是命运的剧本，而是你的过去如何影响现在、现在又如何决定未来的图景。`;
+    }
+  },
+  tension: {
+    label: '张力式',
+    build: (readings, theme) => {
+      const [p, n, f] = readings;
+      return `${p.cardName}和${f.cardName}之间形成了一股张力——过去的惯性拉着你，未来的可能性推着你。而${n.cardName}正站在中间，提醒你：此刻就是做选择的时刻。`;
+    }
+  },
+  advice: {
+    label: '建议式',
+    build: (readings, theme) => {
+      const [p, n, f] = readings;
+      return `从${p.cardName}到${n.cardName}再到${f.cardName}，这组牌其实是在给你一份建议：你需要${n.yi}，避免${n.ji}，并且勇敢地迈向${f.keywords[0] || '新的一步'}。`;
     }
   }
 };
 
-// ---------- 单张牌 · 单牌位解读 ----------
-// 返回 2-3 段适合阅读的文字
-export function interpretSingleCard(card, positionKey) {
-  const lens = POSITION_LENS[positionKey];
-  if (!lens) return card.upright;
+// ---------- 行动锚点生成 ----------
+const ACTION_ANCHORS = {
+  love:  ['今天跟TA说一句真心话','写一封简短的信','约TA去你们第一次见面的地方'],
+  study: ['每天复盘 15 分钟','找一个同学一起讨论','列一个本周学习清单'],
+  work:  ['给上司发一条简短的进展汇报','找同事聊一聊他的近况','列三个本周必须完成的任务'],
+  self:  ['今天独处 30 分钟写日记','关掉手机散 20 分钟步','写三件今天让你感恩的小事']
+};
 
-  const positionInfo = THREE_CARD_POSITIONS.find(p => p.key === positionKey);
-  const zh = positionInfo?.zh ?? positionKey;
-  const upright = card.upright;
-  const reversed = card.reversed;
+// ---------- 核心导出 ----------
 
-  const part1 = card.uprightCardText ?? ''; // 预留给扩展
-  const part2 = card.isReversed ? lens.reversed(card) : lens.upright(card);
+/**
+ * 生成单张牌解读（指定牌位 + 主题）
+ */
+export function interpretSingleCard(card, positionKey, themeKey = 'self') {
+  const tpl = POSITION_TEMPLATES[positionKey];
+  if (!tpl) return '';
 
-  // 组合：[牌名介绍] + [位置视角解读]
-  const sentences = [];
-
-  sentences.push(
-    `「${card.nameCn}」（${card.nameEn}）出现在${zh}位置，是一张${card.isReversed ? '逆位' : '正位'}的${card.type === 'major' ? '大阿卡纳' : card.suitCn}牌。`
-  );
-  sentences.push(part2);
-
-  // 加一段建议句（基于正/逆位 + 元素）
-  const hint = buildHint(card, positionKey);
-  if (hint) sentences.push(hint);
-
-  return sentences;
-}
-
-// ---------- 建议句生成 ----------
-function buildHint(card, positionKey) {
-  const elem = card.element || (card.type === 'major' ? '精神' : '');
-  const baseTag = card.isReversed ? '逆位' : '正位';
-
-  const advices = {
-    upright: {
-      major: [
-        '这张大阿卡纳牌提醒你：注意它代表的那个生命主题，最近可能特别活跃。',
-        '大阿卡纳代表生命的重大议题，不必急着"解决"，先观察它在你身上的体现。'
-      ],
-      wands:     ['火元素给你行动力，大胆去做你已经想了很久的那件事。'],
-      cups:      ['水元素关乎情感，问问自己的心真正想要什么。'],
-      swords:    ['风元素带来清晰的思维，用理性梳理一下当前的局面。'],
-      pentacles: ['土元素脚踏实地，先照顾好你的基本盘：身体、钱、环境。']
-    },
-    reversed: {
-      major: [
-        '大阿卡纳逆位，建议你放慢节奏，不要硬顶。',
-        '这张牌是在提醒你：有什么东西需要放下或调整，不是对抗的时候。'
-      ],
-      wands:     ['火元素逆位，先别冲动。等一等，让热情沉淀一下再行动。'],
-      cups:      ['水元素逆位，情绪可能有些起伏。给自己一点时间感受它，不要压抑。'],
-      swords:    ['风元素逆位，思维容易绕弯。写下来或者和信任的人聊聊，会清楚很多。'],
-      pentacles: ['土元素逆位，物质或身体层面可能需要多加留意。']
-    }
-  };
-
-  const pool = advices[card.isReversed ? 'reversed' : 'upright'][card.type === 'major' ? 'major' : (card.suit || card.element)] || [];
-  return pool[Math.floor(Math.random() * pool.length)] || null;
-}
-
-// ---------- 综合解读（本地模板版） ----------
-// 把三张牌串成一个时间线故事
-export function synthesizeLocalInterpretation(cards, question) {
-  const [p, now, f] = cards;
-  const parts = [];
-
-  // 开场
-  if (question && question.trim()) {
-    parts.push(`你问的是「${question.trim()}」。让我们顺着时间线看下去——`);
-  } else {
-    parts.push(`好的，让我们顺着时间线看看这三张牌在说什么——`);
-  }
-
-  // 过去 → 现在 → 未来 的串联
-  const pastRole = describeCardRole(p, 'past');
-  const nowRole  = describeCardRole(now, 'present');
-  const futureRole = describeCardRole(f, 'future');
-
-  parts.push(
-    `过去的「${p.nameCn}」（${p.isReversed ? '逆位' : '正位'}）${pastRole}。`
-  );
-  parts.push(
-    `到了现在，「${now.nameCn}」（${now.isReversed ? '逆位' : '正位'}）${nowRole}。`
-  );
-  parts.push(
-    `而未来向你展开的是「${f.nameCn}」（${f.isReversed ? '逆位' : '正位'}）${futureRole}。`
-  );
-
-  // 串联总结
-  const transition = buildTransition(p, now, f);
-  if (transition) parts.push(transition);
-
-  // 行动建议
-  const advice = buildAdvice(p, now, f);
-  parts.push(advice);
-
-  return parts.join('\n\n');
-}
-
-// 过去/现在/未来 的简短描述
-function describeCardRole(card, pos) {
-  const dir = card.isReversed ? '逆位' : '正位';
-  // 从牌的 upright/reversed 文本里截取第一句或关键词
+  const filter = THEME_FILTERS[themeKey] || THEME_FILTERS.self;
   const meaning = card.isReversed ? card.reversed : card.upright;
-  const firstClause = meaning.split(/[。；;]/)[0] || meaning;
-  return `代表着${dir}的${firstClause.replace(/^你/, '').trim()}的能量`;
+
+  // 找一个和关键词匹配的焦点词
+  const keyword = card.keywords[0] || '某个方面';
+  let focus = filter[keyword] || card.keywords[0] || '当前的处境';
+
+  const tplText = card.isReversed ? tpl.rev : tpl.up;
+  let text = tplText
+    .replace('{card}', card.nameCn)
+    .replace('{focus}', focus)
+    .replace('{meaning}', meaning);
+
+  return text;
 }
 
-// 过去→现在→未来 的过渡逻辑
-function buildTransition(p, now, f) {
-  const allUpright = !p.isReversed && !now.isReversed && !f.isReversed;
-  const allReversed = p.isReversed && now.isReversed && f.isReversed;
+/**
+ * 生成综合解读（三张牌 + 主题）
+ * @returns { text, styleName, action }
+ */
+export function synthesizeInterpretation(cards, positions, themeKey = 'self') {
+  // 从过去到未来
+  const ordered = positions.map((posKey, i) => ({
+    ...cards[i],
+    cardName: cards[i].nameCn,
+    yi: cards[i].yi,
+    ji: cards[i].ji,
+    keywords: cards[i].keywords
+  }));
 
-  if (allUpright) {
-    return '三张都是正位，这是一条顺畅的能量流：过去给你打了好基础，现在你在正确的路上，未来也会顺着这个方向开花。继续保持现在的节奏。';
-  }
-  if (allReversed) {
-    return '三张都是逆位，这可能是一个信号：你当前的人生阶段需要停下来重新校准方向。不必焦虑，逆位的能量是在帮你发现"什么不对"，而不是宣判失败。';
-  }
+  // 三种句式轮换（用时间戳模 3）
+  const styleIdx = Math.floor(Date.now() / 1000) % 3;
+  const style = SYNTAX_STYLES[styleIdx];
+  const builder = SYNTAX_TEMPLATES[style].build;
+  const text = builder(ordered, themeKey);
 
-  // 混合情况
-  const hasPastLesson = p.isReversed;
-  const hasFutureWarning = f.isReversed;
+  // 行动锚点（最后一句必须是具体可做的小动作）
+  const anchors = ACTION_ANCHORS[themeKey] || ACTION_ANCHORS.self;
+  const action = anchors[Math.floor(Math.random() * anchors.length)];
 
-  if (hasPastLesson && !hasFutureWarning) {
-    return '过去可能有些没有处理完的事，但好消息是——你已经在慢慢从中走出来，现在的能量正在转向，未来看起来是积极的。';
-  }
-  if (!hasPastLesson && hasFutureWarning) {
-    return '过去给你留了不错的基础，现在也还算稳，但未来有一个需要注意的信号：你现在做的一些选择，很可能会把你推向那个结果。现在调整还来得及。';
-  }
-  if (p.isReversed && f.isReversed) {
-    return '过去和未来都是逆位，中间的现在是关键转折点。你此刻的每一个决定都会放大成未来的样子——不要被过去的包袱绑住，也不要对未来的警告视而不见。';
-  }
-  return '这个组合很有意思，它告诉你：能量在变化，方向在调整。你正处在一个动态的过程中，而非一个静态的结果。';
+  return {
+    styleName: SYNTAX_TEMPLATES[style].label,
+    text: text + `\n\n💡 今天可以试试：${action}。`,
+    action
+  };
 }
 
-// 行动建议
-function buildAdvice(p, now, f) {
-  // 选一张牌的关键词作为行动锚点
-  const anchorCard = !now.isReversed ? now : (!p.isReversed ? p : f);
-  const kws = anchorCard.keywords.slice(0, 3).join('、');
+/**
+ * 今日牌的"为什么是这张牌"说明
+ */
+export function whyToday(card, dateStr) {
+  const seedSum = [...dateStr].reduce((a, c) => a + c.charCodeAt(0), 0) % 78;
+  return `今天是 ${dateStr}，宇宙用一个古老的算法算出了这张牌——它不是随机的巧合，而是今天的能量底色。让它给你一点指引，但选择权始终在你手中。`;
+}
 
-  const templates = [
-    `综合来看，塔罗给你的建议是：${kws}——让这几个词成为你接下来的行动锚点。`,
-    `最后给你一个可以带走的东西：在接下来的一周里，多留意和「${kws}」相关的情境，它们可能就是牌在给你发的信号。`,
-    `总结成一句话：无论结果如何，你现在正处在一个关键节点上，专注做好眼前的事，答案会自己浮现。`
-  ];
-
-  return templates[Math.floor(Math.random() * templates.length)];
+/**
+ * 把一次占卜结果拼成纯文本（用于复制）
+ */
+export function buildResultText(ctx) {
+  const { question, themeLabel, spreadLabel, cards, cardReadings, finalText } = ctx;
+  let out = `🌙 月相塔罗 · 占卜结果\n\n`;
+  if (question) out += `💬 问题：${question}\n`;
+  out += `🎯 主题：${themeLabel} | 📐 阵型：${spreadLabel}\n\n`;
+  cardReadings.forEach((r, i) => {
+    const c = cards[i];
+    out += `━━━ ${r.posCn} ━━━\n`;
+    out += `🃏 ${c.nameCn}（${c.nameEn}）${c.isReversed ? '· 逆位' : '· 正位'}\n`;
+    out += `🔑 ${c.keywords.join(' · ')}\n`;
+    out += `${r.text}\n\n`;
+  });
+  out += `━━━ 综合解读 ━━━\n${finalText}\n\n`;
+  out += `⚠️ 内容仅供娱乐，不构成任何建议。`;
+  return out;
 }

@@ -1,125 +1,133 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0d0b1e" />
-  <title>🌙 月相塔罗 · Tarot Divination</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0818" />
+  <title>🌙 月相塔罗</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <!-- ====== 星空背景层 ====== -->
-  <div class="stars-bg" aria-hidden="true">
-    <div class="stars stars-s1"></div>
-    <div class="stars stars-s2"></div>
-    <div class="stars stars-s3"></div>
-    <div class="shooting" id="shooting1"></div>
-    <div class="shooting" id="shooting2"></div>
+  <!-- 三层星空：装饰层（parallax） + 随机星点 + 发光星 -->
+  <div class="starfield starfield--d"></div>
+  <div class="starfield starfield--m"></div>
+  <div class="starfield starfield--g"></div>
+  <div class="shooting-star" id="shooting"></div>
+
+  <!-- 主容器 -->
+  <div class="app" id="app">
+
+    <!-- =============== 今日运势 =============== -->
+    <section class="view view--today" data-view="today" hidden>
+      <header class="page-header">
+        <h1>🌙 今日牌</h1>
+        <p class="tagline" id="today-date">——</p>
+      </header>
+      <div class="today-body" id="today-body"></div>
+    </section>
+
+    <!-- =============== 占卜 =============== -->
+    <section class="view view--divine" data-view="divine" hidden>
+      <header class="page-header">
+        <h1>🔮 占卜</h1>
+        <p class="tagline">静心想一个问题…</p>
+      </header>
+
+      <!-- Stage 1：主题选择 -->
+      <div class="stage" id="stage-theme">
+        <p class="stage-title">选一个主题</p>
+        <div class="chip-row" id="theme-chips"></div>
+        <button class="btn btn--ghost" id="divine-skip-theme">跳过主题</button>
+      </div>
+
+      <!-- Stage 2：阵型选择 -->
+      <div class="stage" id="stage-spread" hidden>
+        <p class="stage-title">选一个阵型</p>
+        <div class="spread-cards" id="spread-cards"></div>
+        <button class="btn btn--ghost" id="divine-back-theme">← 返回</button>
+      </div>
+
+      <!-- Stage 3：问题输入 + 正逆位开关 -->
+      <div class="stage" id="stage-question" hidden>
+        <label class="stage-title" for="question-input">你的问题（可选）</label>
+        <textarea id="question-input" rows="3" placeholder="比如：我和TA会怎样发展？"></textarea>
+        <div class="settings-row">
+          <label class="switch">
+            <input type="checkbox" id="upright-only" />
+            <span class="switch-slider"></span>
+            <span class="switch-label">只抽正位</span>
+          </label>
+        </div>
+        <button class="btn btn--ghost" id="divine-back-spread">← 返回</button>
+        <button class="btn btn--primary" id="divine-start">开始占卜</button>
+      </div>
+
+      <!-- Stage 4：洗牌 -->
+      <div class="stage" id="stage-shuffle" hidden>
+        <p class="stage-title" id="shuffle-text">✨ 正在洗牌…</p>
+        <div class="shuffle-area" id="shuffle-area"></div>
+        <p class="hint">（双击屏幕可跳过动画）</p>
+      </div>
+
+      <!-- Stage 5：翻牌 -->
+      <div class="stage" id="stage-reveal" hidden>
+        <div class="spread-row" id="spread-row"></div>
+        <div class="readings" id="readings"></div>
+        <div class="final-block" id="final-block" hidden>
+          <button class="btn btn--copy" id="copy-result">📋 复制结果</button>
+          <button class="btn btn--ghost" id="save-result">💾 保存到记录</button>
+          <button class="btn btn--ghost" id="divine-restart">🔄 重新占卜</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== 牌库 =============== -->
+    <section class="view view--library" data-view="library" hidden>
+      <header class="page-header">
+        <h1>📚 牌库</h1>
+        <div class="lib-tools">
+          <input type="search" id="lib-search" placeholder="搜索中文名…" />
+        </div>
+      </header>
+      <div class="lib-filters" id="lib-filters"></div>
+      <div class="lib-grid" id="lib-grid"></div>
+    </section>
+
+    <!-- =============== 记录 =============== -->
+    <section class="view view--history" data-view="history" hidden>
+      <header class="page-header">
+        <h1>📜 我的记录</h1>
+      </header>
+      <div class="history-list" id="history-list"></div>
+      <div class="empty-hint" id="history-empty" hidden>还没有记录，去占卜一张吧～</div>
+    </section>
   </div>
 
-  <!-- ====== 顶部导航 ====== -->
-  <header class="top-bar">
-    <div class="brand">
-      <span class="brand-icon">🌙</span>
-      <span class="brand-name">月相塔罗</span>
-      <span class="brand-en">Tarot</span>
+  <!-- 牌库详情抽屉 -->
+  <div class="drawer" id="card-drawer" hidden>
+    <div class="drawer-mask" data-drawer-close></div>
+    <div class="drawer-panel">
+      <button class="drawer-close" data-drawer-close>✕</button>
+      <div id="drawer-body"></div>
     </div>
-    <div class="top-actions">
-      <label class="toggle-simple" title="仅抽取正位牌">
-        <input type="checkbox" id="uprightOnly" />
-        <span class="toggle-slider"></span>
-        <span class="toggle-text">仅正位</span>
-      </label>
-      <button id="btnReset" class="btn-reset" title="重新开始">↻</button>
-    </div>
-  </header>
+  </div>
 
-  <!-- ====== 主容器 ====== -->
-  <main id="app" class="app">
+  <!-- Toast -->
+  <div class="toast" id="toast" hidden></div>
 
-    <!-- ============ 阶段 1：首页 - 问题输入 ============ -->
-    <section class="stage stage--intro" id="stageIntro">
-      <h1 class="tagline">
-        <span>静心凝神，</span>
-        <span>向月亮问一个答案。</span>
-      </h1>
-      <p class="tagline-sub">
-        三牌阵 · 过去 / 现在 / 未来
-      </p>
+  <!-- 底部标签栏 -->
+  <nav class="tabbar" aria-label="主导航">
+    <button class="tab" data-go="today"><span class="tab-ico">🌙</span><span class="tab-label">今日</span></button>
+    <button class="tab tab--active" data-go="divine"><span class="tab-ico">🔮</span><span class="tab-label">占卜</span></button>
+    <button class="tab" data-go="library"><span class="tab-ico">📚</span><span class="tab-label">牌库</span></button>
+    <button class="tab" data-go="history"><span class="tab-ico">📜</span><span class="tab-label">记录</span></button>
+  </nav>
 
-      <div class="question-box">
-        <label for="questionInput">写下你心中的问题 <span class="optional">（可跳过）</span></label>
-        <textarea id="questionInput" rows="2" maxlength="200"
-          placeholder="例如：我最近的工作选择会带来怎样的结果？"></textarea>
-      </div>
-
-      <button id="btnStart" class="btn-primary">
-        <span>✨ 开始占卜</span>
-      </button>
-
-      <p class="tip">点击开始后，牌会先洗牌再翻开</p>
-    </section>
-
-    <!-- ============ 阶段 2：洗牌动画 ============ -->
-    <section class="stage stage--shuffling hidden" id="stageShuffling">
-      <h2 class="shuffling-title">✨ 正在洗牌...</h2>
-      <div class="deck-area" id="deckArea">
-        <!-- JS 动态生成 78 张卡牌 -->
-      </div>
-      <p class="shuffling-hint">感受你的问题，牌在聆听</p>
-    </section>
-
-    <!-- ============ 阶段 3：抽牌区 ============ -->
-    <section class="stage stage--cards hidden" id="stageCards">
-      <div class="cards-row">
-        <!-- 三张牌的占位，JS 动态填充 -->
-      </div>
-      <p class="reveal-hint" id="revealHint">点击卡牌逐一翻开</p>
-    </section>
-
-    <!-- ============ 阶段 4：综合解读 + 追问 ============ -->
-    <section class="stage stage--interpret hidden" id="stageInterpret">
-      <div class="interpret-block">
-        <h2 class="section-title">
-          <span class="section-line"></span>
-          综合解读
-          <span class="section-line"></span>
-        </h2>
-
-        <div class="interpret-body" id="interpretBody">
-          <div class="interpret-loading" id="interpretLoading">
-            <span></span><span></span><span></span>
-            <p id="interpretHint">正在连接星象...</p>
-          </div>
-        </div>
-
-        <p class="interpret-source" id="interpretSource"></p>
-      </div>
-
-      <!-- 追问区域 -->
-      <div class="followup-block">
-        <h2 class="section-title section-title--small">💬 继续追问</h2>
-        <div class="followup-history" id="followupHistory"></div>
-
-        <div class="followup-input-row">
-          <textarea id="followupInput" rows="2" maxlength="200"
-            placeholder="例如：这张牌和我的工作有什么关系？"></textarea>
-          <button id="btnFollowup" class="btn-primary btn-primary--small" disabled>发送</button>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ====== 底部合规声明 ====== -->
-  <footer class="footer">
-    <p>内容仅供娱乐，不构成任何医疗、法律、投资建议。</p>
-    <p class="footer-sub">Made with 🌙 · 78 张韦特塔罗</p>
+  <!-- 合规声明 -->
+  <footer class="disclaimer">
+    内容仅供娱乐，不构成任何医疗、法律、投资建议。
   </footer>
 
-  <!-- 全局错误提示条 -->
-  <div class="toast hidden" id="toast"></div>
-
-  <script type="module" src="app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

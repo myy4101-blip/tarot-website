@@ -14,6 +14,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { ALL_CARDS } from './public/tarot-data.js';
+import { randomYis, randomJis } from './public/yi-ji-pool.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -263,7 +264,8 @@ app.get('/api/today', authRequired, async (req, res) => {
       type: card.type, suit: card.suit, suitCn: card.suitCn,
       rank: card.rank, element: card.element,
       upright: card.upright, reversed: card.reversed,
-      keywords: card.keywords, isReversed
+      keywords: card.keywords, isReversed,
+      yis: randomYis(3), jis: randomJis(3)
     };
 
     all[key] = slim;

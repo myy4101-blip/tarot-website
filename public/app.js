@@ -160,8 +160,8 @@ async function renderToday() {
   }
 
   const why = whyToday(card, dateStr);
-  const yis = randomYis(3);
-  const jis = randomJis(3);
+  const yis = card.yis && card.yis.length ? card.yis : randomYis(3);
+  const jis = card.jis && card.jis.length ? card.jis : randomJis(3);
 
   $('#today-body').innerHTML = `
     <div class="today-card-display">
